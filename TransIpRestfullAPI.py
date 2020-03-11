@@ -10,7 +10,6 @@ class TransIpRestfulAPI:
 
     login = ''
     private_key = None
-    auth_url = 'https://{}/{}/auth'
     endpoint = 'api.transip.nl'
     version = 'v6'
     read_only = True
@@ -24,6 +23,7 @@ class TransIpRestfulAPI:
 
         self.login = login
         self._set_private_key(key_url)
+        self.token = None
 
     def set_label(self, label: str):
         """Set label."""
@@ -55,7 +55,22 @@ class TransIpRestfulAPI:
             print(json.load(response.content))
             raise RuntimeError(f"An error occurred: {response}")
 
-        return json.load(response.content)
+        self.token = json.load(response.content)
+
+    def get_domains(self):
+        """Get a list of owned domains."""
+        request = f'https://{self.endpoint}/{self.version}/domains'
+        return self._perform_data_get_request(request)
+
+    def get_domain(self, domain: str):
+        """Get a specific owned domain."""
+        request = f'https://{self.endpoint}/{self.version}/domains/{domain}'
+        return self._perform_data_get_request(request)
+
+    def get_dns_records_for_domain(self, domain: str):
+        """Get all dns records for specific domain."""
+        request = f'https://{self.endpoint}/{self.version}/domains/{domain}/dns'
+        return self._perform_data_get_request(request)
 
     def _set_private_key(self, key_url):
         """Set private key from file."""
@@ -65,7 +80,7 @@ class TransIpRestfulAPI:
         matches = re.match('^-{5}BEGIN (RSA )?PRIVATE KEY-{5}(.*)-{5}END (RSA )?PRIVATE KEY-{5}$', raw_key)
 
         if matches is None:
-            raise RuntimeError('key not valid')
+            raise ValueError('Private key is not valid.')
 
         base_key = matches.groups()[1].strip().replace(r'\s*', '')
         formatted_key = '\n'.join(base_key[i:min(i + 64, len(base_key))] for i in range(0, len(base_key), 64))
@@ -73,7 +88,7 @@ class TransIpRestfulAPI:
 
     def _get_auth_url(self) -> str:
         """Generate url based on version."""
-        return self.auth_url.format(self.endpoint, self.version)
+        return f'https://{self.endpoint}/{self.version}/auth'
 
     def _get_request_body(self) -> str:
         """Get settings as string."""
@@ -93,6 +108,17 @@ class TransIpRestfulAPI:
             'Signature': self.signature
         }
         response = requests.post(self._get_auth_url(), headers=headers, data=request_body)
+        return response
+
+    def _perform_data_get_request(self, url: str):
+        if self.token is None:
+            self.create_token()
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {self.token}'
+        }
+        response = requests.post(url, headers=headers)
         return response
 
     def _create_signature(self, parameters) -> str:
