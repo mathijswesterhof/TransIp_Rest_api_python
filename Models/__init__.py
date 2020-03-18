@@ -5,3 +5,5 @@ from Models.DNSes import DNSes
 from Models.Domain import Domain
 from Models.Invoice import Invoice
 from Models.Products import Products
+from Models.NameServers import NameServers
+from Models.SSL import SSL

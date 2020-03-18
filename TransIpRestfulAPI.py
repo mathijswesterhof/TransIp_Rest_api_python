@@ -82,6 +82,10 @@ class TransIpRestfulAPI:
             ]
         )
 
+    def get_ssl_certificates_for_domain(self, domain: str) -> [SSL]:
+        domain = Domain(self.requests, {'name': domain})
+        return domain.get_ssl_certificates()
+
     def test_connection(self) -> bool:
         return self.requests.perform_get_request(
             '/api-test',

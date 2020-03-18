@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from HttpLogic.RequestTypes import ApiRequests
-from Models import Branding, Contacts, DNSes, NameServers
+from Models import Branding, Contacts, DNSes, NameServers, SSL
 
 
 class Domain:
@@ -23,7 +23,7 @@ class Domain:
         self.is_whitelabel = bool(domain['isWhitelabel'])\
             if 'isWhitelabel' in domain else None
         self.cancellation_date = datetime.strptime(domain['cancellationDate'], '%Y-%m-%d %H:%M:%S')\
-            if 'cancellationDate' in domain else None
+            if 'cancellationDate' in domain and domain['cancellationDate'] is not '' else None
         self.cancellation_status = domain['cancellationStatus']\
             if 'cancellationStatus' in domain else None
         self.is_dns_only = bool(domain['isDnsOnly'])\
@@ -31,13 +31,15 @@ class Domain:
         self.tags = domain['tags']\
             if 'tags' in domain else None
         self.branding = domain['branding']\
-            if 'tags' in domain else None
+            if 'branding' in domain else None
         self.contacts = domain['contacts']\
-            if 'tags' in domain else None
+            if 'contacts' in domain else None
         self.dnses = domain['dnses']\
-            if 'tags' in domain else None
+            if 'dnses' in domain else None
         self.name_servers = domain['nameservers']\
-            if 'tags' in domain else None
+            if 'nameservers' in domain else None
+        self.ssl_certificates = domain['ssl']\
+            if 'ssl' in domain else None
 
     def _serialize(self) -> dict:
         """Return self as dict."""
@@ -58,7 +60,7 @@ class Domain:
         self,
         name: str,
         expire: int,
-        type: str,
+        dtype: str,
         content: str
     ):
         if self.dnses is None:
@@ -67,7 +69,7 @@ class Domain:
         self.dnses.add_dns({
             'name': name,
             'expire': expire,
-            'type': type.upper(),
+            'type': dtype.upper(),
             'content': content
         })
 
@@ -103,6 +105,28 @@ class Domain:
             self.dnses = DNSes.build_self(self._connection, self.name)
 
         return self.dnses
+
+    def get_name_servers(self) -> [NameServers]:
+        """Get ssl certs for domain"""
+        if self.name_servers is None:
+            request = f'/domains/{self.name}/nameservers'
+            self.name_servers = self._connection.perform_get_request(
+                request,
+                lambda data: [NameServers(self._connection, n) for n in data['nameservers']]
+            )
+
+        return self.name_servers
+
+    def get_ssl_certificates(self) -> [SSL]:
+        """Get ssl certs for domain"""
+        if self.ssl_certificates is None:
+            request = f'/domains/{self.name}/ssl'
+            self.ssl_certificates = self._connection.perform_get_request(
+                request,
+                lambda data: [SSL(self._connection, s) for s in data['certificates']]
+            )
+
+        return self.ssl_certificates
 
     def update_domain(self):
         """Update domain info."""

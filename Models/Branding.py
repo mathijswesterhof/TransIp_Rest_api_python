@@ -4,8 +4,10 @@ from HttpLogic.RequestTypes import ApiRequests
 
 
 class Branding:
+    """Branding model."""
 
     def __init__(self, connection: ApiRequests, branding: dict):
+        """Branding init."""
         self._connection = connection
         self.domain = branding['domain']
         self.company_name = branding['companyName']
@@ -17,6 +19,7 @@ class Branding:
         self.banner_3 = branding['bannerLine3']
 
     def _serialize(self) -> dict:
+        """Return dict of self."""
         return {
             'companyName': self.company_name,
             'supportEmail': self.support_email,
@@ -33,6 +36,7 @@ class Branding:
 
     @staticmethod
     def build_self(connection: ApiRequests, domain: str) -> Branding:
+        """init for Branding model."""
         request = f'/domains/{domain}/branding'
         return connection.perform_get_request(
             request,

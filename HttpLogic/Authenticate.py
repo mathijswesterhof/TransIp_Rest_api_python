@@ -59,7 +59,6 @@ class TransIpAuthenticate:
         response = self._perform_auth_request(request_body)
 
         if response is None or not response.ok:
-            print(json.load(response.content))
             raise RuntimeError(f"An error occurred: {response}")
 
         response = json.loads(response.content.decode())

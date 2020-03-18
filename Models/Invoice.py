@@ -4,7 +4,9 @@ from HttpLogic.RequestTypes import ApiRequests
 
 
 class Invoice:
+    """Invoice model."""
     def __init__(self, connection: ApiRequests, invoice: dict):
+        """Invoice init."""
         self._connection = connection
         self.invoice_number = invoice['invoiceNumber']
         self.creation_date = datetime.strptime(invoice['creationDate'], '%Y-%m-%d').date()
@@ -16,7 +18,8 @@ class Invoice:
         self.total_amount_incl_vat = invoice['totalAmountInclVat']
         self.invoice_items = None
 
-    def get_items(self):
+    def get_items(self) -> dict:
+        """Request aditional info for invoice."""
         if self.invoice_items is not None:
             return self.invoice_items
 
