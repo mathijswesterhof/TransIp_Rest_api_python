@@ -49,10 +49,30 @@ class TransIpRestfulAPI:
             lambda data: Domain(self.requests, data['domain'])
         )
 
-    def get_endpoint(self):
+    def get_endpoint(self) -> str:
         return f'https://{self.endpoint}/{self.version}'
 
-    def get_products(self):
+    def get_invoice(self, invoice_number: str) -> Invoice:
+        request = f'/invoices/{invoice_number}'
+        return self.requests.perform_get_request(
+            request,
+            lambda data: Invoice(self.requests, data['invoice'])
+        )
+
+    def get_invoices(self) -> [Invoice]:
+        return self.requests.perform_get_request(
+            '/invoices',
+            lambda data: [Invoice(self.requests, i) for i in data['invoices']]
+        )
+
+    def get_invoice_as_pdf(self, invoice_number: str) -> str:
+        request = f'/invoices/{invoice_number}/pdf'
+        return self.requests.perform_get_request(
+            request,
+            lambda data: data['pdf']
+        )
+
+    def get_products(self) -> [Products]:
         return self.requests.perform_get_request(
             '/products',
             lambda data: [
