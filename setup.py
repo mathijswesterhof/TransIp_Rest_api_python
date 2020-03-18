@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="TransIp-Restfull-API",  # Replace with your own username
-    version="0.0.1",
+    version="0.1.0",
     author="Mathijs Westerhof",
     author_email="author@example.com",
     description="A python package to connect to the TransIp restfull API",
