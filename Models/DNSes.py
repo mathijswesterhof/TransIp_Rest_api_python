@@ -18,6 +18,9 @@ class DNSes:
 
     def add_dns(self, dns: dict) -> bool:
         """Add dns to list of DNSes."""
+        if dns['type'].upper() not in ['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SRV', 'SSHFP', 'TLSA']:
+            raise ValueError('Type not known')
+
         request = f"/domains/{self.domain}/dns"
         response = self._connection.perform_post_request(
             request,

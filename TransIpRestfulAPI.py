@@ -1,5 +1,6 @@
 from HttpLogic.Authenticate import TransIpAuthenticate
 from HttpLogic.RequestTypes import ApiRequests
+from HttpLogic.Exceptions import NotFoundError
 
 from Models import *
 
@@ -87,3 +88,63 @@ class TransIpRestfulAPI:
             lambda data: bool(data['ping'] == 'pong')
         )
 
+    # ### Post requests ### #
+
+    def create_domain(
+            self,
+            domain_name: str,
+            contacts: [Contacts] = None,
+            name_servers: [NameServers] = None,
+            dnses: DNSes = None,
+            update_model: bool = True
+    ):
+        self.transfer_domain(
+            domain_name,
+            '',
+            contacts,
+            name_servers,
+            dnses,
+            update_model
+        )
+
+    def create_dns_entry_for_domain(
+            self,
+            domain: str,
+            name: str,
+            expire: int,
+            dtype: str,
+            content: str
+    ):
+        domain = Domain(self.requests, {'name': domain})
+        domain.add_dns_entry(name, expire, dtype.upper(), content)
+
+    def transfer_domain(
+            self,
+            domain_name: str,
+            transfer_code: str,
+            contacts: [Contacts] = None,
+            name_servers: [NameServers] = None,
+            dnses: DNSes = None,
+            update_model: bool = True
+    ):
+        domain = {
+            'name': domain_name,
+            'contacts': [] if contacts is None else contacts,
+            'nameservers': [] if name_servers is None else name_servers,
+            'dnses': [] if dnses is None else dnses
+        }
+
+        if transfer_code is not None and transfer_code is not '':
+            domain['authCode'] = transfer_code
+
+        self.requests.perform_post_request(
+            '/domains',
+            domain
+        )
+        if update_model:
+            try:
+                return self.get_domain(domain_name)
+            except NotFoundError:
+                pass
+
+        return Domain(self.requests, {'name': domain_name})

@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from HttpLogic.RequestTypes import ApiRequests
-from Models import Branding, Contacts, DNSes
+from Models import Branding, Contacts, DNSes, NameServers
 
 
 class Domain:
@@ -12,15 +12,32 @@ class Domain:
         """Domain init."""
         self._connection = connection
         self.name = domain['name']
-        self.auth_code = domain['authCode']
-        self.is_transfer_locked = bool(domain['isTransferLocked'])
-        self.registration_date = datetime.strptime(domain['registrationDate'], '%Y-%m-%d').date()
-        self.renewal_date = datetime.strptime(domain['renewalDate'], '%Y-%m-%d').date()
-        self.is_whitelabel = bool(domain['isWhitelabel'])
-        self.cancellation_date = datetime.strptime(domain['cancellationDate'], '%Y-%m-%d %H:%M:%S')
-        self.cancellation_status = domain['cancellationStatus']
-        self.is_dns_only = bool(domain['isDnsOnly'])
-        self.tags = domain['tags']
+        self.auth_code = domain['authCode']\
+            if 'authCode' in domain else None
+        self.is_transfer_locked = bool(domain['isTransferLocked'])\
+            if 'isTransferLocked' in domain else None
+        self.registration_date = datetime.strptime(domain['registrationDate'], '%Y-%m-%d').date()\
+            if 'registrationDate' in domain else None
+        self.renewal_date = datetime.strptime(domain['renewalDate'], '%Y-%m-%d').date()\
+            if 'renewalDate' in domain else None
+        self.is_whitelabel = bool(domain['isWhitelabel'])\
+            if 'isWhitelabel' in domain else None
+        self.cancellation_date = datetime.strptime(domain['cancellationDate'], '%Y-%m-%d %H:%M:%S')\
+            if 'cancellationDate' in domain else None
+        self.cancellation_status = domain['cancellationStatus']\
+            if 'cancellationStatus' in domain else None
+        self.is_dns_only = bool(domain['isDnsOnly'])\
+            if 'isDnsOnly' in domain else None
+        self.tags = domain['tags']\
+            if 'tags' in domain else None
+        self.branding = domain['branding']\
+            if 'tags' in domain else None
+        self.contacts = domain['contacts']\
+            if 'tags' in domain else None
+        self.dnses = domain['dnses']\
+            if 'tags' in domain else None
+        self.name_servers = domain['nameservers']\
+            if 'tags' in domain else None
 
     def _serialize(self) -> dict:
         """Return self as dict."""
@@ -37,6 +54,23 @@ class Domain:
             'tags': self.tags
         }
 
+    def add_dns_entry(
+        self,
+        name: str,
+        expire: int,
+        type: str,
+        content: str
+    ):
+        if self.dnses is None:
+            self.dnses = DNSes(self._connection, [], self.name)
+
+        self.dnses.add_dns({
+            'name': name,
+            'expire': expire,
+            'type': type.upper(),
+            'content': content
+        })
+
     def update_transfer_locked(self, state: bool):
         """Update transfer state."""
         self.is_transfer_locked = state
@@ -51,15 +85,24 @@ class Domain:
 
     def get_branding(self) -> Branding:
         """Get branding for domain."""
-        return Branding.build_self(self._connection, self.name)
+        if self.branding is None:
+            self.branding = Branding.build_self(self._connection, self.name)
+
+        return self.branding
 
     def get_contacts(self) -> Contacts:
         """Get contacts for domain."""
-        return Contacts.build_self(self._connection, self.name)
+        if self.contacts is None:
+            self.contacts = Contacts.build_self(self._connection, self.name)
+
+        return self.contacts
 
     def get_dnses(self) -> DNSes:
         """Get dns list for domain."""
-        return DNSes.build_self(self._connection, self.name)
+        if self.dnses is None:
+            self.dnses = DNSes.build_self(self._connection, self.name)
+
+        return self.dnses
 
     def update_domain(self):
         """Update domain info."""
@@ -68,41 +111,3 @@ class Domain:
     def delete_domain(self):
         """Send termination request for domain."""
         raise NotImplementedError('delete requests are for the next version, this is a placeholder')
-
-    @staticmethod
-    def create_domain(
-            connection: ApiRequests,
-            domain_name: str,
-            contacts: list,
-            name_servers: list,
-            dns_entries: list,
-    ) -> bool:
-        return connection.perform_post_request(
-            '/domains',
-            {
-                'domainName': domain_name,
-                'contacts': contacts,
-                'nameservers': name_servers,
-                'dnsEntries': dns_entries
-            }
-        )
-
-    @staticmethod
-    def transfer_domain(
-            connection: ApiRequests,
-            domain_name: str,
-            auth_code: str,
-            contacts: list,
-            name_servers: list,
-            dns_entries: list,
-    ) -> bool:
-        return connection.perform_post_request(
-            '/domains',
-            {
-                'domainName': domain_name,
-                'authCode': auth_code,
-                'contacts': contacts,
-                'nameservers': name_servers,
-                'dnsEntries': dns_entries
-            }
-        )
